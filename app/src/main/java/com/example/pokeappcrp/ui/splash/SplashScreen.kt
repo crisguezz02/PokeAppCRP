@@ -1,5 +1,6 @@
 package com.example.pokeappcrp.ui.splash
 
+import android.util.Log
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,31 +16,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.pokeappcrp.navigation.Routes
-import kotlinx.coroutines.delay
 import com.example.pokeappcrp.R
 import com.example.pokeappcrp.mvi.pokemonlist.PokemonListIntent
 import com.example.pokeappcrp.mvi.pokemonlist.PokemonListState
 import com.example.pokeappcrp.mvi.pokemonlist.PokemonListViewModel
+import com.example.pokeappcrp.navigation.Routes
 import kotlinx.coroutines.launch
-
-
 
 @Composable
 fun SplashScreen(
     navController: NavController,
     pokemonListViewModel: PokemonListViewModel
 ) {
-
     val scaleAnim = remember { Animatable(0f) }
     val progressAnim = remember { Animatable(0f) }
 
-
     val state by pokemonListViewModel.state.collectAsState()
 
-
+    // Lanzar animaciones y cargar datos
     LaunchedEffect(Unit) {
-
         launch {
             scaleAnim.animateTo(
                 targetValue = 1f,
@@ -53,25 +48,26 @@ fun SplashScreen(
                 animationSpec = tween(durationMillis = 2500, easing = LinearOutSlowInEasing)
             )
         }
+
+        // Enviar la intención para cargar los pokemones
+        Log.d("SplashScreen", "Enviando intent LoadPokemons")
+        pokemonListViewModel.intentChannel.send(PokemonListIntent.LoadPokemons)
     }
 
-
+    // Detectar cuando el estado cambie a Success
     LaunchedEffect(state) {
-        when (state) {
-            is PokemonListState.Success -> {
-                navController.navigate(Routes.LIST) {
-                    popUpTo(Routes.SPLASH) { inclusive = true }
-                }
+        Log.d("SplashScreen", "Estado actual: $state")
+        if (state is PokemonListState.Success) {
+            Log.d("SplashScreen", "Cargando pantalla de lista de pokémons")
+            navController.navigate(Routes.LIST) {
+                popUpTo(Routes.SPLASH) { inclusive = true }
             }
-            is PokemonListState.Error -> {
-
-            }
-
-            else -> {}
+        } else if (state is PokemonListState.Error) {
+            Log.d("SplashScreen", "Error al cargar los pokemones: ${(state as PokemonListState.Error).message}")
         }
     }
 
-
+    // Interfaz de SplashScreen
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -83,14 +79,13 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
             Text(
                 text = "PokeAppCRP",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.offset(y = (-24).dp)
             )
 
-           Image(
+            Image(
                 painter = painterResource(id = R.drawable.pokeball1),
                 contentDescription = "Pokeball",
                 modifier = Modifier
@@ -114,9 +109,8 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
             LinearProgressIndicator(
-                progress = progressAnim.value,
+                progress = progressAnim.value, // No se usa lambda aquí
                 modifier = Modifier
                     .fillMaxWidth(0.5f)
                     .height(6.dp)

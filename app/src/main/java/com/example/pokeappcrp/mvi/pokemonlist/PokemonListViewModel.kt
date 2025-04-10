@@ -1,16 +1,24 @@
 package com.example.pokeappcrp.mvi.pokemonlist
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pokeappcrp.data.remote.ApiClient
 import com.example.pokeappcrp.data.remote.model.PokemonResult
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import com.example.pokeappcrp.domain.PokemonRepository1
 
-class PokemonListViewModel : ViewModel() {
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class PokemonListViewModel @Inject constructor(
+    private val pokemonRepository: PokemonRepository1
+) : ViewModel() {
 
     val intentChannel = Channel<PokemonListIntent>(Channel.UNLIMITED)
 
@@ -24,24 +32,53 @@ class PokemonListViewModel : ViewModel() {
 
     init {
         handleIntents()
+
         viewModelScope.launch {
-            intentChannel.send(PokemonListIntent.LoadPokemons)
+            Log.d("PokemonListVM", "Enviando LoadPokemons desde init")
+
         }
     }
 
     private fun handleIntents() {
         viewModelScope.launch {
             intentChannel.consumeAsFlow().collect { intent ->
+                Log.d("PokemonListViewModel", "Intent recibido: $intent")
                 when (intent) {
-                    is PokemonListIntent.LoadPokemons -> fetchPokemons(true)
-                    is PokemonListIntent.LoadNextPage -> fetchPokemons(false)
-                    is PokemonListIntent.SearchPokemon -> searchPokemon(intent.query)
-                    is PokemonListIntent.FilterByType -> fetchPokemonsByType(intent.type)
+                    is PokemonListIntent.LoadPokemons -> {
+                        Log.d("PokemonListViewModel", "Iniciando la carga de pokemones")
+                        fetchPokemons(true)
+                    }
+
+                    is PokemonListIntent.LoadNextPage -> {
+                        Log.d("PokemonListViewModel", "Cargando siguiente página de pokemones")
+                        fetchPokemons(false)
+                    }
+
+                    is PokemonListIntent.SearchPokemon -> {
+                        Log.d("PokemonListViewModel", "Buscando pokemones por: ${intent.query}")
+                        searchPokemon(intent.query)
+                    }
+
+                    is PokemonListIntent.FilterByType -> {
+                        Log.d(
+                            "PokemonListViewModel",
+                            "Filtrando pokemones por tipo: ${intent.type}"
+                        )
+                        fetchPokemonsByType(intent.type)
+                    }
+
                     is PokemonListIntent.ResetSearch -> {
+                        Log.d("PokemonListViewModel", "Reseteando búsqueda")
                         _state.value = PokemonListState.Success(fullList)
                     }
-                    is PokemonListIntent.ShowTypeSelection -> {}
-                    PokemonListIntent.SearchByType -> {}
+
+                    PokemonListIntent.ShowTypeSelection -> {
+                        Log.d("PokemonListViewModel", "Mostrando selección de tipos")
+                    }
+
+                    else -> {
+                        Log.d("PokemonListViewModel", "No se ha manejado este intent: $intent")
+                    }
                 }
             }
         }
@@ -56,53 +93,26 @@ class PokemonListViewModel : ViewModel() {
                     fullList.clear()
                 }
 
-                val response = ApiClient.apiService.getPokemonList(limit, currentOffset)
-                val basicPokemons = response.results
-
-                val detailedPokemons = basicPokemons.map { basic ->
-                    val detail = ApiClient.apiService.getPokemonDetail(basic.name)
-                    val typeNames = detail.types.map { it.type.name }
-                    basic.copy(types = typeNames)
-                }
-
-                fullList.addAll(detailedPokemons)
+                val newPokemons = pokemonRepository.getPokemonList(limit, currentOffset)
                 currentOffset += limit
 
-                _state.value = PokemonListState.Success(fullList)
+                fullList.addAll(newPokemons)
+                _state.value = PokemonListState.Success(fullList.toList()) // Evita mutabilidad
             } catch (e: Exception) {
-                _state.value = PokemonListState.Error(e.localizedMessage ?: "Error desconocido")
+                _state.value = PokemonListState.Error(e.localizedMessage ?: "Unknown error")
             }
         }
     }
-
     private fun fetchPokemonsByType(type: String) {
         viewModelScope.launch {
             _state.value = PokemonListState.Loading
             try {
-                val response = ApiClient.apiService.getPokemonsByType(type)
-                val entries = response.pokemon.take(30)
-
-                val deferred = entries.map { entry ->
-                    async {
-                        try {
-                            val detail = ApiClient.apiService.getPokemonDetail(entry.pokemon.name)
-                            val typeNames = detail.types.map { it.type.name }
-                            PokemonResult(
-                                name = entry.pokemon.name,
-                                url = entry.pokemon.url,
-                                types = typeNames
-                            )
-                        } catch (e: Exception) {
-                            null
-                        }
-                    }
-                }
-
-                val results = deferred.awaitAll().filterNotNull()
-
+                val results = pokemonRepository.getPokemonsByType(type)
                 _state.value = PokemonListState.Success(results)
             } catch (e: Exception) {
-                _state.value = PokemonListState.Error("Error al cargar pokémon del tipo $type: ${e.localizedMessage}")
+                _state.value = PokemonListState.Error(
+                    "Error al cargar pokémon del tipo $type: ${e.localizedMessage}"
+                )
             }
         }
     }
@@ -113,9 +123,9 @@ class PokemonListViewModel : ViewModel() {
             try {
                 val filtered = fullList.filter { pokemon ->
                     val matchesName = pokemon.name.contains(query, ignoreCase = true)
-                    val matchesType = pokemon.types.any { type ->
+                    val matchesType = pokemon.types?.any { type ->
                         type.equals(query, ignoreCase = true)
-                    }
+                    } ?: false
                     matchesName || matchesType
                 }
                 _state.value = PokemonListState.Success(filtered)
@@ -123,5 +133,7 @@ class PokemonListViewModel : ViewModel() {
                 _state.value = PokemonListState.Error(e.localizedMessage ?: "Error en búsqueda")
             }
         }
-    }
+
+
+}
 }

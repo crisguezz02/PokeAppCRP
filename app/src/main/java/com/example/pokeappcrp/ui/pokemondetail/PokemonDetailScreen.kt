@@ -1,5 +1,6 @@
 package com.example.pokeappcrp.ui.pokemondetail
 
+import PokemonDetailState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,17 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.pokeappcrp.R
-import com.example.pokeappcrp.mvi.pokemondetail.*
-import kotlinx.coroutines.launch
+import com.example.pokeappcrp.mvi.pokemondetail.PokemonDetailIntent
 
 @Composable
 fun PokemonDetailScreen(
-    viewModel: PokemonDetailViewModel,
+    state: PokemonDetailState,
     pokemonId: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onLoadDetail: (String) -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
-
     val typeBackgroundMap = mapOf(
         "normal" to R.drawable.bg_normal,
         "fire" to R.drawable.bg_fire,
@@ -58,10 +57,10 @@ fun PokemonDetailScreen(
     )
 
     LaunchedEffect(pokemonId) {
-        viewModel.intentChannel.send(PokemonDetailIntent.LoadDetail(pokemonId))
+        onLoadDetail(pokemonId)
     }
 
-    when (val currentState = state) {
+    when (state) {
         is PokemonDetailState.Loading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -72,15 +71,14 @@ fun PokemonDetailScreen(
         }
 
         is PokemonDetailState.Success -> {
-            val pokemon = currentState.detail
-            val species = currentState.species
-            val imageUrl = pokemon.sprites.front_default
+            val pokemon = state.detail
+            val species = state.species
+            val imageUrl = pokemon.imageUrl
 
-            val mainType = pokemon.types.firstOrNull()?.type?.name?.lowercase() ?: "normal"
+            val mainType = pokemon.types.firstOrNull()?.lowercase() ?: "normal"
             val backgroundRes = typeBackgroundMap[mainType] ?: R.drawable.bg_normal
 
             Box(modifier = Modifier.fillMaxSize()) {
-
                 Image(
                     painter = painterResource(id = backgroundRes),
                     contentDescription = null,
@@ -114,7 +112,7 @@ fun PokemonDetailScreen(
                     )
 
                     Text(
-                        text = "Tipos: ${pokemon.types.joinToString { it.type.name }}",
+                        text = "Tipos: ${pokemon.types.joinToString()}",
                         color = Color.White,
                         modifier = Modifier.padding(top = 4.dp)
                     )
@@ -131,7 +129,7 @@ fun PokemonDetailScreen(
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Altura: ${pokemon.height}")
                             Text("Peso: ${pokemon.weight}")
-                            Text("Habilidades: ${pokemon.abilities.joinToString { it.ability.name }}")
+                            Text("Habilidades: ${pokemon.abilities.joinToString()}")
                         }
                     }
 
@@ -145,8 +143,8 @@ fun PokemonDetailScreen(
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Estadísticas:", fontWeight = FontWeight.Bold)
                             pokemon.stats.forEach {
-                                val icon = statIcons[it.stat.name] ?: ""
-                                Text("$icon ${it.stat.name.replace("-", " ").replaceFirstChar { c -> c.uppercase() }}: ${it.base_stat}")
+                                val icon = statIcons[it.name] ?: ""
+                                Text("$icon ${it.name.replace("-", " ").replaceFirstChar { c -> c.uppercase() }}: ${it.value}")
                             }
                         }
                     }
@@ -185,10 +183,11 @@ fun PokemonDetailScreen(
 
         is PokemonDetailState.Error -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Error: ${currentState.message}")
+                Text("Error: ${state.message}")
             }
         }
 
         PokemonDetailState.Idle -> Unit
+        else -> {}
     }
 }

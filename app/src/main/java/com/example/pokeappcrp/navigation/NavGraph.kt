@@ -6,10 +6,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.pokeappcrp.mvi.pokemondetail.PokemonDetailViewModel
+import com.example.pokeappcrp.mvi.pokemondetail.PokemonDetailRoute
+import com.example.pokeappcrp.mvi.pokemonlist.PokemonListRoute
 import com.example.pokeappcrp.mvi.pokemonlist.PokemonListViewModel
-import com.example.pokeappcrp.ui.pokemondetail.PokemonDetailScreen
-import com.example.pokeappcrp.ui.pokemonlist.PokemonListScreen
+
+
 import com.example.pokeappcrp.ui.splash.SplashScreen
 
 object Routes {
@@ -38,21 +39,21 @@ fun AppNavGraph(
         }
 
         composable(Routes.LIST) {
-            PokemonListScreen(
-                viewModel = listViewModel
-            ) { pokemonId ->
-                navController.navigate("${Routes.DETAIL}/$pokemonId")
-            }
+            PokemonListRoute(
+                viewModel = listViewModel,
+                onItemClick = { pokemonId ->
+                    navController.navigate("${Routes.DETAIL}/$pokemonId")
+                }
+            )
         }
 
         composable("${Routes.DETAIL}/{pokemonId}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("pokemonId") ?: return@composable
-            val detailViewModel: PokemonDetailViewModel = viewModel()
-            PokemonDetailScreen(
-                viewModel = detailViewModel,
+            PokemonDetailRoute(
                 pokemonId = id,
                 onBackClick = { navController.popBackStack() }
             )
         }
     }
 }
+

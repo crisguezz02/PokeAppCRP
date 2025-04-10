@@ -18,20 +18,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.pokeappcrp.mvi.pokemonlist.*
-import com.example.pokeappcrp.util.extractIdFromUrl
-import kotlinx.coroutines.launch
 import com.example.pokeappcrp.R
+import com.example.pokeappcrp.mvi.pokemonlist.PokemonListState
+import com.example.pokeappcrp.util.extractIdFromUrl
 
 @Composable
 fun PokemonListScreen(
-    viewModel: PokemonListViewModel,
-    onItemClick: (String) -> Unit
+    state: PokemonListState,
+    onItemClick: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    onResetSearch: () -> Unit,
+    onLoadMore: () -> Unit,
+    onFilterByType: (String) -> Unit
 ) {
     val gridState = rememberLazyGridState()
-    val state by viewModel.state.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-
     var searchQuery by remember { mutableStateOf("") }
     var showTypeDialog by remember { mutableStateOf(false) }
 
@@ -73,12 +73,10 @@ fun PokemonListScreen(
                 value = searchQuery,
                 onValueChange = { newValue ->
                     searchQuery = newValue
-                    coroutineScope.launch {
-                        if (newValue.isBlank()) {
-                            viewModel.intentChannel.send(PokemonListIntent.ResetSearch)
-                        } else {
-                            viewModel.intentChannel.send(PokemonListIntent.SearchPokemon(newValue))
-                        }
+                    if (newValue.isBlank()) {
+                        onResetSearch()
+                    } else {
+                        onSearch(newValue)
                     }
                 },
                 label = { Text("Buscar Pokémon") },
@@ -104,7 +102,7 @@ fun PokemonListScreen(
             }
 
             Box(modifier = Modifier.weight(1f)) {
-                when (val currentState = state) {
+                when (state) {
                     is PokemonListState.Loading -> {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
@@ -112,7 +110,7 @@ fun PokemonListScreen(
                     }
 
                     is PokemonListState.Success -> {
-                        val pokemons = currentState.pokemons
+                        val pokemons = state.pokemons
                         LazyVerticalGrid(
                             state = gridState,
                             columns = GridCells.Fixed(2),
@@ -131,13 +129,7 @@ fun PokemonListScreen(
                             if (searchQuery.isBlank()) {
                                 item(span = { GridItemSpan(2) }) {
                                     Button(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                viewModel.intentChannel.send(
-                                                    PokemonListIntent.LoadNextPage
-                                                )
-                                            }
-                                        },
+                                        onClick = onLoadMore,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Text("Cargar más")
@@ -149,11 +141,11 @@ fun PokemonListScreen(
 
                     is PokemonListState.Error -> {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Error: ${currentState.message}")
+                            Text("Error: ${state.message}")
                         }
                     }
 
-                    PokemonListState.Idle -> { /* no-op */ }
+                    PokemonListState.Idle -> {}
                 }
             }
         }
@@ -197,11 +189,7 @@ fun PokemonListScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(typeColor)
                                     .clickable {
-                                        coroutineScope.launch {
-                                            viewModel.intentChannel.send(
-                                                PokemonListIntent.FilterByType(type)
-                                            )
-                                        }
+                                        onFilterByType(type)
                                         showTypeDialog = false
                                     }
                                     .padding(8.dp),

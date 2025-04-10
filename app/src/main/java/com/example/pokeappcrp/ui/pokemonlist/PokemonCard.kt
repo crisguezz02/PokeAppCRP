@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,14 +17,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import coil.compose.rememberAsyncImagePainter
+import com.example.pokeappcrp.R
 import com.example.pokeappcrp.data.remote.model.PokemonResult
 import com.example.pokeappcrp.util.extractIdFromUrl
-import com.example.pokeappcrp.util.parseTypeToDrawable
 import com.example.pokeappcrp.util.parseTypeToCardBackground
-import com.example.pokeappcrp.R
+import com.example.pokeappcrp.util.parseTypeToDrawable
+
 @Composable
 fun PokemonCard(
     pokemon: PokemonResult,
@@ -32,7 +33,8 @@ fun PokemonCard(
     val pokemonNumber = id.padStart(3, '0')
     val imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
 
-    val primaryType = pokemon.types.firstOrNull() ?: "default"
+    // 🔒 Protección contra null
+    val primaryType = pokemon.types?.firstOrNull() ?: "default"
     val backgroundRes = parseTypeToCardBackground(primaryType)
 
     Box(
@@ -98,7 +100,8 @@ fun PokemonCard(
                     .padding(bottom = 11.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                pokemon.types.forEach { typeString ->
+                // 🔒 Protección contra null
+                pokemon.types?.forEach { typeString ->
                     val iconRes = parseTypeToDrawable(typeString)
                     Image(
                         painter = painterResource(id = iconRes),
@@ -112,3 +115,4 @@ fun PokemonCard(
         }
     }
 }
+

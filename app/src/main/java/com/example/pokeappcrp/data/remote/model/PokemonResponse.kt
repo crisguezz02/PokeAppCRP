@@ -7,8 +7,9 @@ data class PokemonResponse(
     val results: List<PokemonResult>
 )
 
+
 data class PokemonResult(
     val name: String,
     val url: String,
-    val types: List<String> = emptyList()
+    val types: List<String>? = null
 )

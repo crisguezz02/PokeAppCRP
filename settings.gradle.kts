@@ -10,7 +10,12 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    plugins {
+        id("dagger.hilt.android.plugin") version "2.48"
+    }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -21,4 +26,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "PokeAppCRP"
 include(":app")
+
  

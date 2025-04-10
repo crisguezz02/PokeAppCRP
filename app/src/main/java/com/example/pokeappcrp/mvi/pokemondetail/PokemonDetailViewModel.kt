@@ -1,13 +1,20 @@
 package com.example.pokeappcrp.mvi.pokemondetail
 
+import PokemonDetailState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pokeappcrp.data.remote.ApiClient
+
+import com.example.pokeappcrp.domain.PokemonRepository1
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class PokemonDetailViewModel : ViewModel() {
+@HiltViewModel
+class PokemonDetailViewModel @Inject constructor(
+    private val repository: PokemonRepository1
+) : ViewModel() {
 
     val intentChannel = Channel<PokemonDetailIntent>(Channel.UNLIMITED)
 
@@ -15,7 +22,6 @@ class PokemonDetailViewModel : ViewModel() {
     val state: StateFlow<PokemonDetailState> = _state.asStateFlow()
 
     init {
-
         handleIntents()
     }
 
@@ -33,11 +39,13 @@ class PokemonDetailViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = PokemonDetailState.Loading
             try {
-                val detail = ApiClient.apiService.getPokemonDetail(id)
-                val species = ApiClient.apiService.getPokemonSpecies(id)
+                val detail = repository.getPokemonDetail(id)
+                val species = repository.getPokemonSpecies(id)
                 _state.value = PokemonDetailState.Success(detail, species)
             } catch (e: Exception) {
-                _state.value = PokemonDetailState.Error(e.localizedMessage ?: "Error al cargar detalle")
+                _state.value = PokemonDetailState.Error(
+                    e.localizedMessage ?: "Error al cargar detalle"
+                )
             }
         }
     }
