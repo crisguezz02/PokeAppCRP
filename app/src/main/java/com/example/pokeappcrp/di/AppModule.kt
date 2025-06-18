@@ -10,10 +10,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 @Module
-@InstallIn(SingletonComponent::class) // Proveemos las dependencias en todo el ciclo de vida de la aplicación
+@InstallIn(SingletonComponent::class) 
 object AppModule {
 
-    // Proveemos una instancia de PokeApiService
     @Provides
     @Singleton
     fun providePokeApiService(): PokeApiService {

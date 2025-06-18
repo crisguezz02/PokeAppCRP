@@ -1,14 +1,24 @@
 package com.example.pokeappcrp.data.remote.model
 
-data class PokemonSpeciesResponse(
-    val flavor_text_entries: List<FlavorTextEntry>
-)
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
+data class PokemonSpeciesResponse(
+    @SerialName("flavor_text_entries")
+    val flavorTextEntries: List<FlavorTextEntry>
+) {
+
+}
+
+@Serializable
 data class FlavorTextEntry(
-    val flavor_text: String,
+    @SerialName("flavor_text")
+    val flavorText: String,
     val language: Language
 )
 
+@Serializable
 data class Language(
     val name: String
 )
