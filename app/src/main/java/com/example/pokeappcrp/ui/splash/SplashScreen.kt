@@ -33,7 +33,7 @@ fun SplashScreen(
 
     val state by pokemonListViewModel.state.collectAsState()
 
-    // Lanzar animaciones y cargar datos
+
     LaunchedEffect(Unit) {
         launch {
             scaleAnim.animateTo(
@@ -49,7 +49,7 @@ fun SplashScreen(
             )
         }
 
-        // Enviar la intención para cargar los pokemones
+
         Log.d("SplashScreen", "Enviando intent LoadPokemons")
         pokemonListViewModel.intentChannel.send(PokemonListIntent.LoadPokemons)
     }
@@ -67,7 +67,7 @@ fun SplashScreen(
         }
     }
 
-    // Interfaz de SplashScreen
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -110,7 +110,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LinearProgressIndicator(
-                progress = progressAnim.value, // No se usa lambda aquí
+                progress = progressAnim.value,
                 modifier = Modifier
                     .fillMaxWidth(0.5f)
                     .height(6.dp)

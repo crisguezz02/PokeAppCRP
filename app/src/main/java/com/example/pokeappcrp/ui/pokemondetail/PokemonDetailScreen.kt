@@ -156,12 +156,13 @@ fun PokemonDetailScreen(
                         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            val description = species.flavor_text_entries
+                            val description = species.flavorTextEntries
                                 .firstOrNull { it.language.name == "en" }
-                                ?.flavor_text
+                                ?.flavorText
                                 ?.replace("\n", " ")
                                 ?.replace("\u000c", " ")
                                 ?: "No description found."
+
 
                             Text("Descripción:", fontWeight = FontWeight.Bold)
                             Text(text = description)

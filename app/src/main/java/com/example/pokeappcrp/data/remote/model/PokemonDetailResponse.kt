@@ -1,5 +1,9 @@
 package com.example.pokeappcrp.data.remote.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class PokemonDetailResponse(
     val id: Int,
     val name: String,
@@ -11,31 +15,40 @@ data class PokemonDetailResponse(
     val sprites: PokemonSprites
 )
 
+@Serializable
 data class PokemonTypeWrapper(
     val type: PokemonType
 )
 
+@Serializable
 data class PokemonType(
     val name: String
 )
 
+@Serializable
 data class PokemonAbilityWrapper(
     val ability: PokemonAbility
 )
 
+@Serializable
 data class PokemonAbility(
     val name: String
 )
 
+@Serializable
 data class PokemonStatWrapper(
     val stat: PokemonStat,
-    val base_stat: Int
+    @SerialName("base_stat")
+    val baseStat: Int
 )
 
+@Serializable
 data class PokemonStat(
     val name: String
 )
 
+@Serializable
 data class PokemonSprites(
-    val front_default: String?
+    @SerialName("front_default")
+    val frontDefault: String? = null
 )

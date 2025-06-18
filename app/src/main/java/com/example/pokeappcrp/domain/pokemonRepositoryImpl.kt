@@ -29,10 +29,13 @@ class PokemonRepositoryImpl @Inject constructor(
     override suspend fun getPokemonDetail(id: String): Pokemon {
         val detail = api.getPokemonDetail(id)
         val species = api.getPokemonSpecies(id)
-        val description = species.flavor_text_entries
+        val description = species.flavorTextEntries
             .firstOrNull { it.language.name == "en" }
-            ?.flavor_text?.replace("\n", " ")?.replace("\u000c", " ")
+            ?.flavorText
+            ?.replace("\n", " ")
+            ?.replace("\u000c", " ")
             ?: "No description found."
+
 
         return Pokemon(
             id = detail.id,
