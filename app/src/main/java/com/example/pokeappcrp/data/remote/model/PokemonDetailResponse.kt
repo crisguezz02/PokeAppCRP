@@ -39,7 +39,7 @@ data class PokemonAbility(
 data class PokemonStatWrapper(
     val stat: PokemonStat,
     @SerialName("base_stat")
-    val base_stat: Int
+    val baseStat: Int
 )
 
 @Serializable
@@ -50,5 +50,5 @@ data class PokemonStat(
 @Serializable
 data class PokemonSprites(
     @SerialName("front_default")
-    val front_default: String? = null
+    val frontDefault: String? = null
 )
